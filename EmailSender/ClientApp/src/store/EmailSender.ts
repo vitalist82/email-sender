@@ -6,6 +6,7 @@ export interface EmailSenderState {
     recipients: string;
     subject: string;
     body: string;
+    isSending: boolean;
     isMessageValid: boolean;
     responseType: ResponseType;
     response: string;
@@ -21,6 +22,11 @@ interface EmailMessage {
     recipients: Array<string>;
     subject: string;
     body: string;
+}
+
+interface SetIsSendingAction {
+    type: 'SET_IS_SENDING',
+    value: boolean
 }
 
 interface SendEmailMessageAction {
@@ -47,16 +53,27 @@ interface SetBodyAction {
     body: string
 }
 
-type KnownAction = SendEmailMessageAction | SetSenderAction | SetRecipientsAction | SetSubjectAction | SetBodyAction;
+interface SetResponseAction {
+    type: 'SET_RESPONSE',
+    value: string
+}
+
+interface SetResponseTypeAction {
+    type: 'SET_RESPONSE_TYPE',
+    value: ResponseType
+}
+
+type KnownAction = SendEmailMessageAction | SetSenderAction | SetRecipientsAction | SetSubjectAction | SetBodyAction | SetIsSendingAction | SetResponseAction | SetResponseTypeAction;
 
 export const actionCreators = {
     sendEmailMessage: (): AppThunkAction<KnownAction> => (dispatch, getState) => {
         const appState = getState();
         if (appState && appState.emailSender /*&& appState.emailSender.isMessageValid*/) {
+            dispatch({ type: 'SET_IS_SENDING', value: true });
             var request: Request = new Request('api/message', {
                 method: 'POST', body: JSON.stringify({
                     sender: { email: appState.emailSender.sender, name: '' },
-                    recipients: [{ email: appState.emailSender.recipients, name: '' }],
+                    recipients: appState.emailSender.recipients.split(";").map((r) => ({ email: r, name: '' })),
                     subject: appState.emailSender.subject,
                     body: appState.emailSender.body
                 })
@@ -64,13 +81,14 @@ export const actionCreators = {
 
             request.headers.set('Content-Type', 'application/json');
 
-            fetch(request)
-                .then(response => response.json())
+            return fetch(request)
+                .then(response => response.json(), error => dispatch({ type: 'SET_RESPONSE_TYPE', value: ResponseType.Error }))
                 .then(data => {
                     console.log(data);
+                    dispatch({ type: 'SET_IS_SENDING', value: false });
+                    dispatch({ type: 'SET_RESPONSE_TYPE', value: ResponseType.OK });
+                    dispatch({ type: 'SET_RESPONSE', value: JSON.stringify(data) });
                 });
-
-            dispatch({ type: 'SEND_EMAIL_MESSAGE' });
         }
     },
     setSender: (sender: string): AppThunkAction<KnownAction> => (dispatch, getState) => {
@@ -92,6 +110,7 @@ const initialState = {
     recipients: '',
     subject: '',
     body: '',
+    isSending: false,
     isMessageValid: false,
     response: '',
     responseType: ResponseType.OK
@@ -110,6 +129,12 @@ export const reducer: Reducer<EmailSenderState> = (state: EmailSenderState | und
             return { ...state, subject: action.subject };
         case 'SET_BODY':
             return { ...state, body: action.body };
+        case 'SET_IS_SENDING':
+            return { ...state, isSending: action.value };
+        case 'SET_RESPONSE':
+            return { ...state, response: action.value };
+        case 'SET_RESPONSE_TYPE':
+            return { ...state, responseType: action.value };
         default:
             return state;
     }

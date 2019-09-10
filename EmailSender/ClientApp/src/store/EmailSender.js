@@ -20,21 +20,24 @@ exports.actionCreators = {
     sendEmailMessage: function () { return function (dispatch, getState) {
         var appState = getState();
         if (appState && appState.emailSender /*&& appState.emailSender.isMessageValid*/) {
+            dispatch({ type: 'SET_IS_SENDING', value: true });
             var request = new Request('api/message', {
                 method: 'POST', body: JSON.stringify({
                     sender: { email: appState.emailSender.sender, name: '' },
-                    recipients: [{ email: appState.emailSender.recipients, name: '' }],
+                    recipients: appState.emailSender.recipients.split(";").map(function (r) { return ({ email: r, name: '' }); }),
                     subject: appState.emailSender.subject,
                     body: appState.emailSender.body
                 })
             });
             request.headers.set('Content-Type', 'application/json');
-            fetch(request)
-                .then(function (response) { return response.json(); })
+            return fetch(request)
+                .then(function (response) { return response.json(); }, function (error) { return dispatch({ type: 'SET_RESPONSE_TYPE', value: ResponseType.Error }); })
                 .then(function (data) {
                 console.log(data);
+                dispatch({ type: 'SET_IS_SENDING', value: false });
+                dispatch({ type: 'SET_RESPONSE_TYPE', value: ResponseType.OK });
+                dispatch({ type: 'SET_RESPONSE', value: JSON.stringify(data) });
             });
-            dispatch({ type: 'SEND_EMAIL_MESSAGE' });
         }
     }; },
     setSender: function (sender) { return function (dispatch, getState) {
@@ -55,6 +58,7 @@ var initialState = {
     recipients: '',
     subject: '',
     body: '',
+    isSending: false,
     isMessageValid: false,
     response: '',
     responseType: ResponseType.OK
@@ -73,6 +77,12 @@ exports.reducer = function (state, incomingAction) {
             return __assign({}, state, { subject: action.subject });
         case 'SET_BODY':
             return __assign({}, state, { body: action.body });
+        case 'SET_IS_SENDING':
+            return __assign({}, state, { isSending: action.value });
+        case 'SET_RESPONSE':
+            return __assign({}, state, { response: action.value });
+        case 'SET_RESPONSE_TYPE':
+            return __assign({}, state, { responseType: action.value });
         default:
             return state;
     }

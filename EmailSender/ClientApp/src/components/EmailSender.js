@@ -20,35 +20,48 @@ var EmailSender = /** @class */ (function (_super) {
     __extends(EmailSender, _super);
     function EmailSender(props) {
         var _this = _super.call(this, props) || this;
-        _this.handleSubmit = function () {
-            _this.props.sendEmailMessage();
+        _this.handleSubmit = function (event) {
+            event.preventDefault();
+            if (event.currentTarget.checkValidity() === false) {
+                event.stopPropagation();
+            }
+            else {
+                _this.props.sendEmailMessage();
+            }
         };
         return _this;
     }
     EmailSender.prototype.render = function () {
         var _this = this;
-        return (React.createElement("form", { onSubmit: function (e) { e.preventDefault(); _this.props.sendEmailMessage(); } },
+        return (React.createElement("form", { className: "needs-validation", onSubmit: this.handleSubmit },
             React.createElement("div", { className: "row" },
                 React.createElement("div", { className: "col-12 col-sm-2 col-form-label" },
-                    React.createElement("label", null, "Sender:")),
+                    React.createElement("label", { htmlFor: "senderInput" }, "Sender:")),
                 React.createElement("div", { className: "col-12 col-sm-10" },
-                    React.createElement("input", { id: "senderInput", className: "form-control", placeholder: "name@example.com", type: "email", name: "sender", value: this.props.sender, onChange: function (e) { return _this.props.setSender(e.target.value); } }))),
+                    React.createElement("input", { required: true, id: "senderInput", className: "form-control", placeholder: "name@example.com", type: "email", name: "sender", value: this.props.sender, onChange: function (e) { return _this.props.setSender(e.target.value); } }))),
             React.createElement("div", { className: "row" },
                 React.createElement("div", { className: "col-12 col-sm-2 col-form-label" },
-                    React.createElement("label", null, "Recipients:")),
+                    React.createElement("label", { htmlFor: "recipientsInput" }, "Recipients:")),
                 React.createElement("div", { className: "col-12 col-sm-10" },
-                    React.createElement("input", { className: "form-control", type: "text", name: "recipients", value: this.props.recipients, onChange: function (e) { return _this.props.setRecipients(e.target.value); } }))),
+                    React.createElement("input", { required: true, id: "recipientsInput", className: "form-control", type: "text", name: "recipients", value: this.props.recipients, onChange: function (e) { return _this.props.setRecipients(e.target.value); } }))),
             React.createElement("div", { className: "row" },
                 React.createElement("div", { className: "col-12 col-sm-2 col-form-label" },
-                    React.createElement("label", null, "Subject:")),
+                    React.createElement("label", { htmlFor: "subjectInput" }, "Subject:")),
                 React.createElement("div", { className: "col-12 col-sm-10" },
-                    React.createElement("input", { className: "form-control", type: "text", name: "subject", value: this.props.subject, onChange: function (e) { return _this.props.setSubject(e.target.value); } }))),
+                    React.createElement("input", { required: true, id: "subjectInput", className: "form-control", type: "text", name: "subject", value: this.props.subject, onChange: function (e) { return _this.props.setSubject(e.target.value); } }))),
             React.createElement("div", { className: "row" },
                 React.createElement("div", { className: "col-12 col-form-label" },
                     React.createElement("label", null, "Message:")),
                 React.createElement("div", { className: "col-12" },
                     React.createElement("textarea", { className: "form-control form-control-lg", rows: 10, name: "body", value: this.props.body, onInput: function (e) { return _this.props.setBody(e.target.value); } }))),
-            React.createElement("input", { type: "submit", name: "submit", className: "btn btn-primary mt-2" })));
+            React.createElement("div", { className: "row" },
+                React.createElement("div", { className: "col-12" },
+                    React.createElement("button", { className: "btn btn-primary mt-2 mb-2", type: "submit" },
+                        this.props.isSending && React.createElement("span", { className: "spinner-border spinner-border-sm", role: "status", "aria-hidden": "true" }),
+                        "Send"))),
+            React.createElement("div", { className: "row" },
+                React.createElement("div", { className: "col-12" },
+                    React.createElement("textarea", { className: "form-control form-control-lg", value: this.props.response, readOnly: true, rows: 10 })))));
     };
     return EmailSender;
 }(React.Component));
